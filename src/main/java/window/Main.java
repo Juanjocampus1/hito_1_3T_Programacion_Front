@@ -3,8 +3,14 @@ package window;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.formdev.flatlaf.FlatDarkLaf;
 
+import HTTP.Response.GetRequest;
+import HTTP.Response.GetRequest.OnDataReceivedListener;
 import DTO.DataDTO;
 
 import java.awt.event.ActionListener;
@@ -191,18 +197,48 @@ public class Main {
     }
 
     private void agregarTablaConFormulario(JPanel panel) {
-        // Create table model with columns for inventory attributes
-        DefaultTableModel tableModel = new DefaultTableModel(
-            new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0);
+    	// Crear el modelo de tabla con las columnas para los atributos del inventario
+    	DefaultTableModel tableModel = new DefaultTableModel(
+    	        new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0);
 
-        JTable table = new JTable(tableModel);
-        table.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        table.setBackground(new Color(64, 64, 64));
-        table.setForeground(Color.WHITE);
+    	JTable table = new JTable(tableModel);
+    	table.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    	table.setBackground(new Color(64, 64, 64));
+    	table.setForeground(Color.WHITE);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 200)); // Reduce the height of the table
-        panel.add(scrollPane, BorderLayout.CENTER);
+    	JScrollPane scrollPane = new JScrollPane(table);
+    	scrollPane.setPreferredSize(new Dimension(800, 200)); // Reducir la altura de la tabla
+    	panel.add(scrollPane, BorderLayout.CENTER);
+
+    	// Realizar la solicitud GET y llenar la tabla con los datos obtenidos
+    	GetRequest getRequest = new GetRequest();
+    	getRequest.setOnDataReceivedListener(new OnDataReceivedListener() {
+    	    @Override
+    	    public void onDataReceived(JSONArray data) {
+    	        // Limpiar la tabla antes de agregar nuevos datos
+    	        SwingUtilities.invokeLater(() -> {
+    	            tableModel.setRowCount(0);
+
+    	            // Recorrer el array JSON y agregar los datos a la tabla
+    	            for (int i = 0; i < data.length(); i++) {
+    	                JSONObject jsonObject = data.getJSONObject(i);
+    	                int id = jsonObject.getInt("ID");
+    	                String nombre = jsonObject.getString("Nombre");
+    	                String descripcion = jsonObject.getString("Descripción");
+    	                int stock = jsonObject.getInt("Stock");
+    	                double precio = jsonObject.getDouble("Precio");
+    	                String categoria = jsonObject.getString("Categoría");
+    	                String proveedor = jsonObject.getString("Proveedor");
+
+    	                // Agregar los datos a la tabla
+    	                tableModel.addRow(new Object[]{id, nombre, descripcion, stock, precio, categoria, proveedor});
+    	            }
+    	        });
+    	    }
+    	});
+
+    	// Realizar la solicitud GET
+    	getRequest.sendGetRequest();
 
         // Create form to modify inventory
         JPanel formPanel = new JPanel(new GridLayout(0, 2));

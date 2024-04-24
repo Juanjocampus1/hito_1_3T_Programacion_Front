@@ -1,5 +1,6 @@
 package HTTP.Response;
 
+import org.json.JSONArray;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -8,6 +9,19 @@ import java.util.logging.Logger;
 
 public class GetRequest {
     private static final Logger LOGGER = Logger.getLogger(GetRequest.class.getName());
+
+    // Interfaz para el listener
+    public interface OnDataReceivedListener {
+        void onDataReceived(JSONArray data);
+    }
+
+    // Variable para almacenar el listener
+    private OnDataReceivedListener listener;
+
+    // Método para establecer el listener
+    public void setOnDataReceivedListener(OnDataReceivedListener listener) {
+        this.listener = listener;
+    }
 
     // Método para realizar una solicitud GET
     public void sendGetRequest() {
@@ -27,6 +41,14 @@ public class GetRequest {
             // Muestra el código de estado y el cuerpo de la respuesta
             LOGGER.info("Código de estado: " + response.statusCode());
             LOGGER.info("Respuesta de la API: " + response.body());
+            
+            // Parsea la respuesta JSON
+            JSONArray jsonArray = new JSONArray(response.body());
+
+            // Verifica si el listener está establecido y notifica los datos recibidos
+            if (listener != null) {
+                listener.onDataReceived(jsonArray);
+            }
 
         } catch (Exception e) {
             LOGGER.severe("Error al enviar solicitud GET: " + e.getMessage());

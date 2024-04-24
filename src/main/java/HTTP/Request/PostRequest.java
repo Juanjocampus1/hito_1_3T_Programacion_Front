@@ -15,6 +15,7 @@ public class PostRequest {
     
     // Método para enviar solicitud POST
     public void sendPostRequest(DataDTO dataDTO) {
+    	
         try {
             // Convierte el objeto DataDTO a JSON usando Gson
             Gson gson = new Gson();
@@ -37,7 +38,8 @@ public class PostRequest {
             LOGGER.info("Código de estado: " + response.statusCode());
             LOGGER.info("Respuesta de la API: " + response.body());
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             LOGGER.severe("Error al enviar solicitud POST: " + e.getMessage());
             e.printStackTrace();
         }
