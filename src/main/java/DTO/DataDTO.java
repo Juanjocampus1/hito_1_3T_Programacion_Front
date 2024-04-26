@@ -1,6 +1,7 @@
 package DTO;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 import lombok.*;
 
@@ -19,11 +20,10 @@ public class DataDTO {
     private BigDecimal price;
     private String category;
     private String provider;
-    private String FechaCreacion;
-    private String FechaActualizacion;
-    private Long idInform;
+    private Date FechaCreacion;
+    private Date FechaActualizacion;
     
-	public DataDTO(Long id, String name, String description, int stock, BigDecimal price, String category, String provider, String fechaCreacion, String fechaActualizacion, Long idInform) {
+	public DataDTO(Long id, String name, String description, int stock, BigDecimal price, String category, String provider, Date fechaCreacion, Date fechaActualizacion) {
 		
 		super();
 		
@@ -36,7 +36,6 @@ public class DataDTO {
 		this.provider = provider;
 		FechaCreacion = fechaCreacion;
 		FechaActualizacion = fechaActualizacion;
-		this.idInform = idInform;
 	}
 
 	public DataDTO() {
@@ -98,35 +97,27 @@ public class DataDTO {
 		this.provider = provider;
 	}
 
-	public String getFechaCreacion() {
+	public Date getFechaCreacion() {
 		return FechaCreacion;
 	}
 
-	public void setFechaCreacion(String fechaCreacion) {
+	public void setFechaCreacion(Date fechaCreacion) {
 		FechaCreacion = fechaCreacion;
 	}
 
-	public String getFechaActualizacion() {
+	public Date getFechaActualizacion() {
 		return FechaActualizacion;
 	}
 
-	public void setFechaActualizacion(String fechaActualizacion) {
+	public void setFechaActualizacion(Date fechaActualizacion) {
 		FechaActualizacion = fechaActualizacion;
-	}
-
-	public Long getIdInform() {
-		return idInform;
-	}
-
-	public void setIdInform(Long idInform) {
-		this.idInform = idInform;
 	}
 
 	@Override
 	public String toString() {
 		return "DataDTO [id=" + id + ", name=" + name + ", description=" + description + ", stock=" + stock + ", price="
 				+ price + ", category=" + category + ", provider=" + provider + ", FechaCreacion=" + FechaCreacion
-				+ ", FechaActualizacion=" + FechaActualizacion + ", idInform=" + idInform + "]";
+				+ ", FechaActualizacion=" + FechaActualizacion + "]";
 	}
     
 }
