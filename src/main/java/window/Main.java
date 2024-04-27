@@ -193,9 +193,6 @@ public class Main {
                 data.setProvider(txtProveedor.getText());
 
                 // Establecer las fechas de creación y actualización
-                Date now = new Date();
-                data.setFechaCreacion(now);
-                data.setFechaActualizacion(now);
 
                 try {
                     // Asignar valores convertidos y verificar errores de formato
@@ -373,8 +370,6 @@ public class Main {
 
                     BigDecimal precio = new BigDecimal(txtPrecio.getText());
                     data.setPrice(precio);
-
-                    data.setFechaActualizacion(new Date()); // Fecha actual para la actualización
 
                     // Llamar a la solicitud PUT con un entero
                     PutRequest putRequest = new PutRequest();

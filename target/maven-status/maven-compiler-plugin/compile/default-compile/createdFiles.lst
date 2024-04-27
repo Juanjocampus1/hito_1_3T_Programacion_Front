@@ -1,0 +1,14 @@
+DTO\DataDTO$DataDTOBuilder.class
+HTTP\Request\DeleteRequest.class
+window\Main$3.class
+window\Main$2.class
+window\Main$5.class
+HTTP\Response\GetRequest.class
+window\Main$1.class
+HTTP\Response\GetRequest$OnDataReceivedListener.class
+HTTP\Request\PutRequest.class
+HTTP\Request\PostRequest.class
+window\Main$6.class
+window\Main.class
+DTO\DataDTO.class
+window\Main$4.class
