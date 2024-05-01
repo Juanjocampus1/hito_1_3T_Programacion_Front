@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 
 public class Main {
 
+	private DefaultTableModel tableModel;
     private JFrame frame;
     private JTextField txtId;
 
@@ -44,6 +45,11 @@ public class Main {
     }
 
     public Main() {
+    	// Inicializar tableModel para que no sea null
+    	tableModel = new DefaultTableModel(
+                new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0
+            );
+    	
         initialize();
     }
 
@@ -74,7 +80,19 @@ public class Main {
         // Change the background of the tabs
         panelRegistro.setBackground(new Color(64, 64, 64)); 
         panelModificar.setBackground(new Color(64, 64, 64)); 
-        panelEliminar.setBackground(new Color(64, 64, 64)); 
+        panelEliminar.setBackground(new Color(64, 64, 64));
+        
+        // Asegúrate de que tableModel esté inicializado
+        tableModel = new DefaultTableModel(
+            new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0
+        );
+
+        JTable table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+        // Agregar el JScrollPane al panel adecuado
+
+        // Llama a actualizarTabla() para mostrar datos al cargar la aplicación
+        actualizarTabla();
 
         // Add components to the Registro tab
         agregarFormularioRegistro(panelRegistro);
@@ -213,10 +231,14 @@ public class Main {
                     JOptionPane.showMessageDialog(null, "Error: Ingrese valores numéricos válidos para stock y precio.", "Error de conversión", JOptionPane.ERROR_MESSAGE);
                     return; // Salir si hay error
                 }
+                catch(Exception es) {
+                	JOptionPane.showMessageDialog(null, "algo ha ido mal", "repite la accion", JOptionPane.ERROR_MESSAGE);
+                }
 
                 // Enviar la solicitud POST
                 PostRequest postRequest = new PostRequest();
                 postRequest.sendPostRequest(data); // Llamar al método para enviar la solicitud POST
+                actualizarTabla();
             }
             
             
@@ -228,60 +250,64 @@ public class Main {
         
     }
 
-    private void agregarTablaConFormulario(JPanel panel) {
-    	// Crear el modelo de tabla con las columnas para los atributos del inventario
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0);
+    public void actualizarTabla() {
+        if (tableModel == null) { // Verificar si tableModel es null antes de usarlo
+            System.err.println("tableModel es null. No se puede actualizar la tabla.");
+            return;
+        }
 
+        GetRequest getRequest = new GetRequest();
+        getRequest.setOnDataReceivedListener(new GetRequest.OnDataReceivedListener() {
+            @Override
+            public void onDataReceived(JSONArray data) {
+                SwingUtilities.invokeLater(() -> {
+                    tableModel.setRowCount(0); // Limpiar la tabla antes de agregar nuevos datos
+
+                    for (int i = 0; i < data.length(); i++) {
+                        JSONObject jsonObject = data.getJSONObject(i);
+
+                        int id = jsonObject.getInt("id");
+                        String nombre = jsonObject.getString("name");
+                        String descripcion = jsonObject.getString("description");
+                        int stock = jsonObject.getInt("stock");
+                        double precio = jsonObject.getDouble("price");
+                        String categoria = jsonObject.getString("category");
+                        String proveedor = jsonObject.getString("provider");
+
+                        tableModel.addRow(new Object[]{id, nombre, descripcion, stock, precio, categoria, proveedor});
+                    }
+                });
+            }
+        });
+
+        getRequest.sendGetRequest(); // Realizar la solicitud GET para obtener datos actualizados
+    }
+
+    private void agregarTablaConFormulario(JPanel panel) {
+    	// Usar el modelo de tabla existente
+        if (tableModel == null) {
+            tableModel = new DefaultTableModel(
+                new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0
+            );
+        }
+
+        // Crear y configurar la JTable
         JTable table = new JTable(tableModel);
         table.setFont(new Font("SansSerif", Font.PLAIN, 14));
         table.setBackground(new Color(64, 64, 64));
         table.setForeground(Color.WHITE);
 
+        // Agregar la tabla a un JScrollPane
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 200)); // Ajusta según necesites
+        scrollPane.setPreferredSize(new Dimension(800, 200)); // Ajustar el tamaño del JScrollPane
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Crear el Timer para realizar la solicitud GET cada 5 segundos
-        int delay = 2500; // 2.5 segundos
-        Timer timer = new Timer(delay, e -> {
-            GetRequest getRequest = new GetRequest();
-            getRequest.setOnDataReceivedListener(new GetRequest.OnDataReceivedListener() {
-                @Override
-                public void onDataReceived(JSONArray data) {
-                    SwingUtilities.invokeLater(() -> {
-                        // Limpiar la tabla antes de agregar nuevos datos
-                        tableModel.setRowCount(0);
+        // Actualizar la tabla al inicio
+        actualizarTabla();
 
-                        // Recorrer el array JSON y agregar los datos a la tabla
-                        for (int i = 0; i < data.length(); i++) {
-                            JSONObject jsonObject = data.getJSONObject(i);
-
-                            int id = jsonObject.getInt("id");
-                            String nombre = jsonObject.getString("name");
-                            String descripcion = jsonObject.getString("description");
-                            int stock = jsonObject.getInt("stock");
-                            double precio = jsonObject.getDouble("price");
-                            String categoria = jsonObject.getString("category");
-                            String proveedor = jsonObject.getString("provider");
-
-                            // Agregar los datos a la tabla
-                            tableModel.addRow(new Object[]{id, nombre, descripcion, stock, precio, categoria, proveedor});
-                        }
-                    });
-                }
-            });
-
-            getRequest.sendGetRequest(); // Realizar la solicitud GET
-        });
-
-        // Configurar el temporizador para que se repita cada 5 segundos
-        timer.setRepeats(true);
-        timer.start(); // Iniciar el temporizador
-
-        // Create form to modify inventory
+        // Crear formulario para modificar inventario
         JPanel formPanel = new JPanel(new GridLayout(0, 2));
-        formPanel.setBackground(new Color(64, 64, 64)); 
+        formPanel.setBackground(new Color(64, 64, 64));
 
         JLabel lblIdProducto = new JLabel("ID Producto:");
         lblIdProducto.setFont(new Font("SansSerif", Font.BOLD, 14));
@@ -295,6 +321,7 @@ public class Main {
 
         JTextField txtNombreProducto = new JTextField();
 
+        // Otros campos para descripción, stock, precio, categoría, proveedor
         JLabel lblDescripcion = new JLabel("Descripción:");
         lblDescripcion.setFont(new Font("SansSerif", Font.BOLD, 14));
         lblDescripcion.setForeground(Color.WHITE);
@@ -325,76 +352,74 @@ public class Main {
 
         JTextField txtProveedor = new JTextField();
 
-        // Add fields to the form panel
+        // Añadir campos al formulario
         formPanel.add(lblIdProducto);
         formPanel.add(txtIdProducto);
-
         formPanel.add(lblNombreProducto);
         formPanel.add(txtNombreProducto);
-
         formPanel.add(lblDescripcion);
         formPanel.add(txtDescripcion);
-
         formPanel.add(lblStock);
         formPanel.add(txtStock);
-
         formPanel.add(lblPrecio);
         formPanel.add(txtPrecio);
-
         formPanel.add(lblCategoria);
         formPanel.add(txtCategoria);
-
         formPanel.add(lblProveedor);
         formPanel.add(txtProveedor);
 
+        // Botón para modificar inventario
         JButton btnModificar = new JButton("Modificar");
-        btnModificar.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    // Crear el objeto DataDTO
-                    DataDTO data = new DataDTO();
+        btnModificar.addActionListener(e -> {
+            try {
+                // Crear el objeto DataDTO
+                DataDTO data = new DataDTO();
 
-                    // Obtener y convertir el ID (asegúrate de que el ID es un valor numérico)
-                    long idLong = Long.parseLong(txtIdProducto.getText());
-                    int id = (int) idLong; // Conversión de long a int
+                long id = Long.parseLong(txtIdProducto.getText()); // Conversión de texto a long
+                data.setId(id);
+                data.setName(txtNombreProducto.getText());
+                data.setDescription(txtDescripcion.getText());
+                data.setCategory(txtCategoria.getText());
+                data.setProvider(txtProveedor.getText());
 
-                    data.setId((long) id);
-                    data.setName(txtNombreProducto.getText());
-                    data.setDescription(txtDescripcion.getText());
-                    data.setCategory(txtCategoria.getText());
-                    data.setProvider(txtProveedor.getText());
+                int stock = Integer.parseInt(txtStock.getText());
+                data.setStock(stock);
 
-                    int stock = Integer.parseInt(txtStock.getText());
-                    data.setStock(stock);
+                BigDecimal precio = new BigDecimal(txtPrecio.getText());
+                data.setPrice(precio);
 
-                    BigDecimal precio = new BigDecimal(txtPrecio.getText());
-                    data.setPrice(precio);
+                // Enviar la solicitud PUT para modificar datos
+                PutRequest putRequest = new PutRequest();
+                putRequest.sendPutRequest(data, id); // Usar el ID largo
 
-                    // Llamar a la solicitud PUT con un entero
-                    PutRequest putRequest = new PutRequest();
-                    putRequest.sendPutRequest(data, id);
+                // Actualizar la tabla después de eliminar
+                actualizarTabla();
 
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(
-                        null,
-                        "Error: Ingrese valores numéricos válidos para el ID, stock y precio.",
-                        "Error de conversión",
-                        JOptionPane.ERROR_MESSAGE
-                    );
-                }
+            } catch (NumberFormatException ex) {
+                // Manejo de excepciones para valores inválidos
+                JOptionPane.showMessageDialog(null, 
+                    "Por favor, ingrese valores numéricos válidos para el ID, stock y precio.",
+                    "Error de conversión", 
+                    JOptionPane.ERROR_MESSAGE
+                );
             }
         });
+
         btnModificar.setFont(new Font("SansSerif", Font.BOLD, 16));
         btnModificar.setForeground(Color.WHITE);
-        formPanel.add(btnModificar);
+        formPanel.add(btnModificar); // Añadir el botón al panel de formulario
 
+        // Agregar el panel de formulario al panel principal
         panel.add(formPanel, BorderLayout.SOUTH);
     }
-
-    private void agregarTablaEliminar(JPanel panel) {
-    	// Crear el modelo de tabla con las columnas para el nuevo contexto
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0);
+    
+    public void agregarTablaEliminar(JPanel panel) {
+        // Usar el modelo de tabla existente
+        if (tableModel == null) {
+            tableModel = new DefaultTableModel(
+                new Object[]{"ID", "Nombre", "Descripción", "Stock", "Precio", "Categoría", "Proveedor"}, 0
+            );
+        }
 
         // Crear y configurar la JTable
         JTable table = new JTable(tableModel);
@@ -404,86 +429,57 @@ public class Main {
 
         // Agregar la tabla a un JScrollPane
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 200)); // Ajusta según lo necesario
-
-        // Agregar el JScrollPane al panel
+        scrollPane.setPreferredSize(new Dimension(800, 200)); // Ajustar el tamaño del JScrollPane
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Configurar la solicitud GET con el listener
-        GetRequest getRequest = new GetRequest();
-        getRequest.setOnDataReceivedListener(new GetRequest.OnDataReceivedListener() {
-            @Override
-            public void onDataReceived(JSONArray data) {
-                SwingUtilities.invokeLater(() -> {
-                    // Limpiar la tabla antes de agregar nuevos datos
-                    tableModel.setRowCount(0);
-
-                    // Recorrer el array JSON y agregar los datos a la tabla
-                    for (int i = 0; i < data.length(); i++) {
-                        JSONObject jsonObject = data.getJSONObject(i);
-
-                        int id = jsonObject.getInt("id");
-                        String nombre = jsonObject.getString("name");
-                        String descripcion = jsonObject.getString("description");
-                        int stock = jsonObject.getInt("stock");
-                        double precio = jsonObject.getDouble("price");
-                        String categoria = jsonObject.getString("category");
-                        String proveedor = jsonObject.getString("provider");
-
-                        // Agregar los datos a la tabla
-                        tableModel.addRow(new Object[]{id, nombre, descripcion, stock, precio, categoria, proveedor});
-                    }
-                });
-            }
-        });
-
-        // Configurar el temporizador para hacer actualizaciones periódicas
-        int delay = 2500; // 2.5 segundos
-        Timer timer = new Timer(delay, e -> getRequest.sendGetRequest()); // Realizar la solicitud GET
-        timer.setRepeats(true); // Hacer que se repita
-        timer.start(); // Iniciar el temporizador
-
-        // Button to delete selected items
+        // Botón para eliminar elementos seleccionados
         JButton btnEliminar = new JButton("Eliminar");
-        btnEliminar.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    // Convertir el texto del campo txtId a un número Long
-                    Long id = Long.parseLong(txtId.getText());
+        btnEliminar.addActionListener(e -> {
+            try {
+                // Obtener el ID a eliminar
+                Long id = Long.parseLong(txtId.getText());
 
-                    // Crear el objeto DeleteRequest para enviar la solicitud DELETE
-                    DeleteRequest deleteRequest = new DeleteRequest();
-                    deleteRequest.sendDeleteRequest(id); // Enviar la solicitud DELETE
+                // Crear solicitud para eliminar
+                DeleteRequest deleteRequest = new DeleteRequest();
+                deleteRequest.sendDeleteRequest(id);
 
-                    System.out.println("Elemento con ID " + id + " eliminado."); // Mensaje para confirmar la acción
+                // Actualizar la tabla después de eliminar
+                actualizarTabla();
 
-                } catch (NumberFormatException ex) {
-                    // Manejar el error si el texto no es un número válido
-                    System.err.println("Error al convertir ID: " + ex.getMessage());
-                    JOptionPane.showMessageDialog(null, 
-                        "Por favor, ingrese un ID válido", 
-                        "Error de conversión", 
-                        JOptionPane.ERROR_MESSAGE);
-                }
+                System.out.println("Elemento con ID " + id + " eliminado.");
+
+            } catch (NumberFormatException ex) {
+                System.err.println("Error al convertir ID: " + ex.getMessage());
+                JOptionPane.showMessageDialog(
+                    null, 
+                    "Por favor, ingrese un ID válido", 
+                    "Error de conversión", 
+                    JOptionPane.ERROR_MESSAGE
+                );
             }
         });
+
+        // Estilo del botón "Eliminar"
         btnEliminar.setFont(new Font("SansSerif", Font.BOLD, 16));
         btnEliminar.setForeground(Color.WHITE);
-        btnEliminar.setBackground(new Color(128, 0, 0)); // Dark red for the delete button
+        btnEliminar.setBackground(new Color(128, 0, 0)); // Rojo oscuro para el botón de eliminar
 
+        // Panel para botones y campos
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setBackground(new Color(64, 64, 64)); // Dark background for the button panel
+        buttonPanel.setBackground(new Color(64, 64, 64)); // Fondo oscuro
         
+        // Campo de texto para ingresar ID a eliminar
         JLabel lblID = new JLabel("ID");
         lblID.setFont(new Font("Tahoma", Font.PLAIN, 20));
         buttonPanel.add(lblID);
-        
+
         txtId = new JTextField();
         txtId.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        txtId.setColumns(10); // Tamaño del campo de texto
         buttonPanel.add(txtId);
-        txtId.setColumns(10);
         buttonPanel.add(btnEliminar);
 
+        // Agregar el panel de botones
         panel.add(buttonPanel, BorderLayout.SOUTH);
     }
 }

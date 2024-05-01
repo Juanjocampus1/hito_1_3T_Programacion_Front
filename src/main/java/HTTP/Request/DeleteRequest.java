@@ -16,7 +16,7 @@ public class DeleteRequest {
 
             // Crear la solicitud DELETE con el ID del recurso
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8090/api/crud/delete/" + selectedId)) // Endpoint con el ID
+                    .uri(URI.create("http://localhost:8081/api/crud/delete/" + selectedId)) // Endpoint con el ID
                     .DELETE() // Solicitud DELETE
                     .build();
 

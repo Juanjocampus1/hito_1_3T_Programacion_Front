@@ -31,7 +31,7 @@ public class GetRequest {
 
             // Crea la solicitud GET
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8090/api/crud/findAll")) // Endpoint para la solicitud GET
+                    .uri(URI.create("http://localhost:8081/api/crud/findAll")) // Endpoint para la solicitud GET
                     .GET() // Define que es una solicitud GET
                     .build();
 
