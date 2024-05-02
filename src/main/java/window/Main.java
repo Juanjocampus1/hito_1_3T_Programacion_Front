@@ -60,10 +60,12 @@ public class Main {
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setBounds(100, 100, 1920, 1080);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setBackground(new Color(40, 40, 40));
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("SansSerif", Font.BOLD, 18));
         tabbedPane.setForeground(Color.WHITE);
+        tabbedPane.setBackground(new Color(40, 40, 40));
 
         JPanel panelRegistro = new JPanel();
         panelRegistro.setLayout(new GridLayout(0, 2));
@@ -78,9 +80,9 @@ public class Main {
         frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 
         // Change the background of the tabs
-        panelRegistro.setBackground(new Color(64, 64, 64)); 
-        panelModificar.setBackground(new Color(64, 64, 64)); 
-        panelEliminar.setBackground(new Color(64, 64, 64));
+        panelRegistro.setBackground(new Color(40, 40, 40)); 
+        panelModificar.setBackground(new Color(24, 24, 24)); 
+        panelEliminar.setBackground(new Color(24, 24, 24));
         
         // Asegúrate de que tableModel esté inicializado
         tableModel = new DefaultTableModel(
@@ -124,6 +126,7 @@ public class Main {
         });
         ReportGenerator.setFont(new Font("Calibri", Font.PLAIN, 28));
         panelRegistro.add(ReportGenerator);
+        ReportGenerator.setBackground(new Color(65, 0, 85));
         
         // Add table and form to the Modificar tab
         agregarTablaConFormulario(panelModificar);
@@ -197,54 +200,88 @@ public class Main {
         panel.add(txtProveedor);
         
         JButton btnRegistrar = new JButton("Registrar");
+        styleButton(btnRegistrar);
         // Configurar el evento para el botón "Registrar"
         btnRegistrar.addActionListener(new ActionListener() {
-            @Override
+        	@Override
             public void actionPerformed(ActionEvent e) {
                 DataDTO data = new DataDTO();
 
-                // Obtener datos desde la interfaz
-                data.setName(txtNombreProducto.getText());
-                data.setDescription(txtDescripcion.getText());
-                data.setCategory(txtCategoria.getText());
-                data.setProvider(txtProveedor.getText());
+                String nombre = txtNombreProducto.getText();
+                String descripcion = txtDescripcion.getText();
+                String categoria = txtCategoria.getText();
+                String proveedor = txtProveedor.getText();
+                String stockStr = txtStock.getText();
+                String precioStr = txtPrecio.getText();
 
-                // Establecer las fechas de creación y actualización
+                // Validaciones de campos vacíos
+                if (nombre.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "El campo 'Nombre' no puede estar vacío.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (descripcion.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "El campo 'Descripción' no puede estar vacío.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (categoria.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "El campo 'Categoría' no puede estar vacío.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (proveedor.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "El campo 'Proveedor' no puede estar vacío.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (stockStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "El campo 'Stock' no puede estar vacío.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (precioStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "El campo 'Precio' no puede estar vacío.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
 
                 try {
-                    // Asignar valores convertidos y verificar errores de formato
-                    int stock = Integer.parseInt(txtStock.getText());
-                    data.setStock(stock);
+                    int stock = Integer.parseInt(stockStr);
+                    if (stock < 0) {
+                        JOptionPane.showMessageDialog(null, "El stock no puede ser negativo.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
 
-                    BigDecimal precio = new BigDecimal(txtPrecio.getText());
+                    BigDecimal precio = new BigDecimal(precioStr);
+                    if (precio.compareTo(BigDecimal.ZERO) < 0) {
+                        JOptionPane.showMessageDialog(null, "El precio no puede ser negativo.", "Error de validación", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    data.setName(nombre);
+                    data.setDescription(descripcion);
+                    data.setCategory(categoria);
+                    data.setProvider(proveedor);
+                    data.setStock(stock);
                     data.setPrice(precio);
-                    
+
+                    // Limpiar campos después de asignación exitosa
                     txtNombreProducto.setText("");
                     txtDescripcion.setText("");
                     txtCategoria.setText("");
                     txtProveedor.setText("");
                     txtStock.setText("");
                     txtPrecio.setText("");
-
-                } 
-                catch (NumberFormatException ex) {
+                } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(null, "Error: Ingrese valores numéricos válidos para stock y precio.", "Error de conversión", JOptionPane.ERROR_MESSAGE);
-                    return; // Salir si hay error
-                }
-                catch(Exception es) {
-                	JOptionPane.showMessageDialog(null, "algo ha ido mal", "repite la accion", JOptionPane.ERROR_MESSAGE);
+                    return;
+                } catch (Exception es) {
+                    JOptionPane.showMessageDialog(null, "Ocurrió un error inesperado. Intente nuevamente.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
 
-                // Enviar la solicitud POST
+                // Enviar solicitud POST y actualizar la tabla
                 PostRequest postRequest = new PostRequest();
-                postRequest.sendPostRequest(data); // Llamar al método para enviar la solicitud POST
-                actualizarTabla();
+                postRequest.sendPostRequest(data);
+                actualizarTabla(); // Si es necesario
             }
-            
-            
-            
         });
-        btnRegistrar.setFont(new Font("Calibri", Font.PLAIN, 24));
+        btnRegistrar.setFont(new Font("Calibri", Font.PLAIN, 38));
         panel.add(btnRegistrar);
         
         
@@ -370,6 +407,7 @@ public class Main {
 
         // Botón para modificar inventario
         JButton btnModificar = new JButton("Modificar");
+        styleButton(btnModificar);
         btnModificar.addActionListener(e -> {
             try {
                 // Crear el objeto DataDTO
@@ -481,5 +519,11 @@ public class Main {
 
         // Agregar el panel de botones
         panel.add(buttonPanel, BorderLayout.SOUTH);
+    }
+    
+    private void styleButton(JButton button) {
+        button.setBackground(new Color(30, 144, 255)); // Azul para botones de acción positiva
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("SansSerif", Font.PLAIN, 18));
     }
 }
